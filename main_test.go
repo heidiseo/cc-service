@@ -11,10 +11,12 @@ import (
 	"github.com/onsi/gomega"
 )
 
+//TestHandler makes a mock http request and tests if the response is correct
 func TestHandler(t *testing.T) {
-
+	//test tool
 	g := gomega.NewGomegaWithT(t)
 
+	//makes a mock request body for POST request for creditcard
 	reqBody := []byte(`{
 		"firstname": "John",
 		"lastname": "Smith",
@@ -23,32 +25,33 @@ func TestHandler(t *testing.T) {
 		"employment-status": "FULL_TIME",
 		"salary": 30000
 	}`)
-
+	//converts the format	[]byte to bytes.Reader
 	body := bytes.NewReader(reqBody)
-
+	//makes a mock http request wit the mock body
 	req, err := http.NewRequest("POST", "/Handler", body)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	//create a ResponseRecorder to record the response.
+	//creates a ResponseRecorder to record the response.
 	rr := httptest.NewRecorder()
 	handler := http.HandlerFunc(Handler)
 
-	// directly and pass in our Request and ResponseRecorder.
+	//directly passes in the Request and ResponseRecorder.
 	handler.ServeHTTP(rr, req)
 
-	//check the status code is what we expect.
+	//checks the status code is what we expect.
 	if status := rr.Code; status != http.StatusOK {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusOK)
 	}
 
-	//check the response body is what we expect.
+	//checks the response body is what we expect.
 	respBody, _ := ioutil.ReadAll(rr.Body)
 	var creditCardResults []CreditCard
+	//convers json to CreditCard struct
 	err = json.Unmarshal(respBody, &creditCardResults)
-
+	//expected response in CreditCard struct
 	test := []CreditCard{
 		{
 			Provider:  "ScoredCards",
@@ -75,13 +78,15 @@ func TestHandler(t *testing.T) {
 			CardScore: 0.135,
 		},
 	}
-
+	//compares the response received and the expected response above
 	g.Expect(creditCardResults).To(gomega.Equal(test))
 }
 
+//TestGetCSCards tests if it receives the correct information from CSCards API
 func TestGetCSCards(t *testing.T) {
+	//test tool
 	g := gomega.NewGomegaWithT(t)
-
+	//makes test cases with struct in order to iterate instead of repeating
 	tests := []struct {
 		Message string
 		UInfo   UserInfo
@@ -109,7 +114,7 @@ func TestGetCSCards(t *testing.T) {
 			Error: "",
 		},
 	}
-
+	//makes the expected response from CSCards
 	csCards := []CreditCard{
 		{
 			Provider:  "CSCards",
@@ -128,6 +133,7 @@ func TestGetCSCards(t *testing.T) {
 		},
 	}
 
+	//iterates the tests, checks error codes an compares the response body with the expected response above
 	for _, test := range tests {
 		t.Run(test.Message, func(t *testing.T) {
 			creditcards, err := test.UInfo.GetCSCards()
@@ -143,8 +149,9 @@ func TestGetCSCards(t *testing.T) {
 }
 
 func TestGetScoredCards(t *testing.T) {
+	//test tool
 	g := gomega.NewGomegaWithT(t)
-
+	//makes test cases with struct in order to iterate instead of repeating
 	tests := []struct {
 		Message string
 		UInfo   UserInfo
@@ -172,7 +179,7 @@ func TestGetScoredCards(t *testing.T) {
 			Error: "",
 		},
 	}
-
+	//makes the expected response from ScoredCards
 	csCards := []CreditCard{
 		{
 			Provider:  "ScoredCards",
@@ -183,7 +190,7 @@ func TestGetScoredCards(t *testing.T) {
 			CardScore: 0.212,
 		},
 	}
-
+	//iterates the tests, checks error codes an compares the response body with the expected response above
 	for _, test := range tests {
 		t.Run(test.Message, func(t *testing.T) {
 			creditcards, err := test.UInfo.GetScoredCards()

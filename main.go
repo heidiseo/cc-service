@@ -84,57 +84,67 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(reqBody, &newUserInfo)
 	if err != nil {
 		w.WriteHeader(400)
-		fmt.Fprintf(w, "please enter the body in JSON")
+		fmt.Fprintf(w, "please enter the body in right JSON format")
 		return
 	}
+
+	//creates an empty result array
 	var creditcards []CreditCard
+
+	//gets credit cards information from CSCards
 	csCardsResults, err := newUserInfo.GetCSCards()
 	if err != nil {
 		w.WriteHeader(400)
 		fmt.Fprintf(w, "unable to retrieve CSCards")
 		return
 	}
+
+	//appends the result array with credit cards received from CSCards
 	for _, csCardsResult := range csCardsResults {
 		creditcards = append(creditcards, csCardsResult)
 	}
+
+	//gets credit cards information from ScoredCards
 	scoredCardsResults, err := newUserInfo.GetScoredCards()
 	if err != nil {
 		w.WriteHeader(400)
 		fmt.Fprintf(w, "unable to retrieve ScoredCards")
 		return
 	}
+	//appends the result array with credit cards received from ScoredCards
 	for _, scoredCardResult := range scoredCardsResults {
 		creditcards = append(creditcards, scoredCardResult)
 	}
 
+	//sorts the result by card score
 	sort.SliceStable(creditcards, func(i, j int) bool {
 		return creditcards[j].CardScore < creditcards[i].CardScore
 	})
 
-	w.WriteHeader(http.StatusOK)
+	//converts the result to json for the response
 	err = json.NewEncoder(w).Encode(creditcards)
 	if err != nil {
 		w.WriteHeader(500)
 		fmt.Fprintf(w, "failed to response in JSON")
 	}
+	//responds with http response status code to 200 if successful
+	w.WriteHeader(http.StatusOK)
 }
 
 //GetCSCards sends a post request to CSCard API endpoint and formats the response
 func (userInfo *UserInfo) GetCSCards() ([]CreditCard, error) {
-	// csCardEndPoint := os.Getenv("CSCARDS_ENDPOINT")
+	//csCardEndPoint := os.Getenv("CSCARDS_ENDPOINT")
+	//above was not working with test environment, put the link here as well as in .env
 	csCardEndPoint := "https://y4xvbk1ki5.execute-api.us-west-2.amazonaws.com/CS/v1/cards"
 
-	if csCardEndPoint == "" {
-		log.Fatal("$CSCARDS_ENDPOINT must be set")
-		return nil, fmt.Errorf("CSCards API endpoint is incorrect")
-	}
-
+	//makes a body for the POST request with user information received
 	var jsonStr = []byte(fmt.Sprintf(`{
 		"fullName": "%s %s",
 		"dateOfBirth": "%s",
 		"creditScore": %d
 	}`, userInfo.FirstName, userInfo.LastName, userInfo.DOB, userInfo.CreditScore))
 
+	//makes a POST request with the body from above
 	req, err := http.NewRequest("POST", csCardEndPoint, bytes.NewBuffer(jsonStr))
 	if err != nil {
 		return nil, fmt.Errorf("unable to make a post request due to the incorrect body")
@@ -148,6 +158,7 @@ func (userInfo *UserInfo) GetCSCards() ([]CreditCard, error) {
 	}
 	defer resp.Body.Close()
 
+	//retrieves the response body from the POST request
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -157,10 +168,13 @@ func (userInfo *UserInfo) GetCSCards() ([]CreditCard, error) {
 
 	var creditCardResults []CreditCard
 
+	//converts json response to CSCardResponse structure
 	err = json.Unmarshal(body, &csCardResult)
 	if err != nil {
 		return nil, fmt.Errorf("unable to reach CSCards API due to the incorrect body")
 	}
+
+	//iterates elements of CSCardResponse, convert it to CreditCard struct and appending it to the result array
 	for _, result := range csCardResult {
 		sc := math.Pow(1/result.Apr, 2)
 		creditCard := CreditCard{
@@ -174,20 +188,18 @@ func (userInfo *UserInfo) GetCSCards() ([]CreditCard, error) {
 
 		creditCardResults = append(creditCardResults, creditCard)
 	}
+	//returns the result array of all credit cards received
 	return creditCardResults, nil
 
 }
 
 //GetScoredCards sends a post request to ScoredCard API endpoint and formats the response
 func (userInfo *UserInfo) GetScoredCards() ([]CreditCard, error) {
-	// scoredCardEndPoint := os.Getenv("SCOREDCARDS_ENDPOINT")
+	//scoredCardEndPoint := os.Getenv("SCOREDCARDS_ENDPOINT")
+	//above was not working with test environment, put the link here as well as in .env
 	scoredCardEndPoint := "https://m33dnjs979.execute-api.us-west-2.amazonaws.com/CS/v2/creditcards"
 
-	if scoredCardEndPoint == "" {
-		log.Fatal("$SCOREDCARDS_ENDPOINT must be set")
-		return nil, fmt.Errorf("ScoredCards API endpoint is incorrect")
-	}
-
+	//makes a body for the POST request with user information received
 	var jsonStr = []byte(fmt.Sprintf(`{
 		"first-name": "%s",
 		"last-name": "%s",
@@ -196,6 +208,8 @@ func (userInfo *UserInfo) GetScoredCards() ([]CreditCard, error) {
 		"employment-status": "%s",
 		"salary": %d
 	}`, userInfo.FirstName, userInfo.LastName, userInfo.DOB, userInfo.CreditScore, userInfo.EmpStatus, userInfo.Salary))
+
+	//makes a POST request with the body from above
 	req, err := http.NewRequest("POST", scoredCardEndPoint, bytes.NewBuffer(jsonStr))
 	if err != nil {
 		return nil, fmt.Errorf("unable to make a post request due to the incorrect body")
@@ -208,20 +222,27 @@ func (userInfo *UserInfo) GetScoredCards() ([]CreditCard, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-
-	body, _ := ioutil.ReadAll(resp.Body)
+	//retrieves the response body from the POST request
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
 
 	var scoredCardResult []ScoredCardResponse
 
 	var creditCardResults []CreditCard
 
+	//converts json response to ScoredCardResponse structure
 	err = json.Unmarshal(body, &scoredCardResult)
 	if err != nil {
 		return nil, fmt.Errorf("unable to reach ScoredCards API due to the incorrect body")
 	}
 	var features []string
+
+	//iterates elements of ScoredCardResponse, convert it to CreditCard struct and appending it to the result array
 	for _, result := range scoredCardResult {
 		sc := math.Pow(1/result.Apr, 2)
+		//combines attributes and introductory offers into one feature array
 		for _, attr := range result.Attributes {
 			features = append(features, attr)
 		}
@@ -239,5 +260,6 @@ func (userInfo *UserInfo) GetScoredCards() ([]CreditCard, error) {
 		}
 		creditCardResults = append(creditCardResults, creditCard)
 	}
+	//returns the result array of all credit cards received
 	return creditCardResults, nil
 }
