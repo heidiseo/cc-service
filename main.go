@@ -16,12 +16,12 @@ import (
 
 //UserInfo is the information received as a body of the post request to /creditcard
 type UserInfo struct {
-	FirstName   string `json:"firstname"`
-	LastName    string `json:"lastname"`
-	DOB         string `json:"dob"`
-	CreditScore int    `json:"credit-score"`
-	EmpStatus   string `json:"employment-status"`
-	Salary      int    `json:"salary"`
+	FirstName   string `json:"firstname" binding:"required"`
+	LastName    string `json:"lastname" binding:"required"`
+	DOB         string `json:"dob" binding:"required"`
+	CreditScore int    `json:"credit-score" binding:"required"`
+	EmpStatus   string `json:"employment-status" binding:"required"`
+	Salary      int    `json:"salary" binding:"required"`
 }
 
 //CreditCard is the response of /creditcard endpoint if successful
