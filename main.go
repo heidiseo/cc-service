@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/gorilla/mux"
-	"github.com/heidiseo/cc-service"
+	"github.com/heidiseo/cc-service/creditcards"
 )
 
 func main() {
