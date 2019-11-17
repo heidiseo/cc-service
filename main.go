@@ -90,7 +90,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	var creditcards []CreditCard
 	csCardsResults, err := newUserInfo.GetCSCards()
 	if err != nil {
-		w.WriteHeader(500)
+		w.WriteHeader(400)
 		fmt.Fprintf(w, "unable to retrieve CSCards")
 		return
 	}
@@ -99,7 +99,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 	scoredCardsResults, err := newUserInfo.GetScoredCards()
 	if err != nil {
-		w.WriteHeader(500)
+		w.WriteHeader(400)
 		fmt.Fprintf(w, "unable to retrieve ScoredCards")
 		return
 	}
