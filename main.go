@@ -58,6 +58,7 @@ type CreditCards []CreditCard
 
 func main() {
 	port := os.Getenv("PORT")
+	fmt.Println("hello", ":"+port)
 
 	if port == "" {
 		log.Fatal("$PORT must be set")
@@ -65,7 +66,9 @@ func main() {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/creditcard", handler).Methods(http.MethodPost)
-	err := http.ListenAndServe(":5000", r)
+	// err := http.ListenAndServe(":5000", r)
+	err := http.ListenAndServe(":"+port, r)
+
 	if err != nil {
 		log.Fatal("error occurred")
 	}
