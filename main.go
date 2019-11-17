@@ -8,6 +8,7 @@ import (
 	"log"
 	"math"
 	"net/http"
+	"os"
 	"sort"
 
 	"github.com/gorilla/mux"
@@ -56,6 +57,12 @@ type ScoredCardResponse struct {
 type CreditCards []CreditCard
 
 func main() {
+	port := os.Getenv("PORT")
+
+	if port == "" {
+		log.Fatal("$PORT must be set")
+	}
+
 	r := mux.NewRouter()
 	r.HandleFunc("/creditcard", handler).Methods(http.MethodPost)
 	err := http.ListenAndServe(":5000", r)
