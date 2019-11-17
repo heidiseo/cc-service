@@ -14,7 +14,7 @@ This API has a single endpoint (POST) that consumes user financial details and r
 ## Environments
 PORT(localhost:5000), CSCARDS_ENDPOINT(CSCards API endpoint) and SCOREDCARDS_ENDPOINT(ScoredCards API endpoint).
 
-## Functions
+## Functions(main.go)
     `handler` function
         * receives the user financial details from the body of the post request 
         * passes the information to `getCSCards` and `getScoredCards` APIs
@@ -36,6 +36,6 @@ PORT(localhost:5000), CSCARDS_ENDPOINT(CSCards API endpoint) and SCOREDCARDS_END
         * returns all the credit card results
 
 
-## Testing and Linting
+## Tests(main_test.go)
 
 To run the tests do `go test`.
